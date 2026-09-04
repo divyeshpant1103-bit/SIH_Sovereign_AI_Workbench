@@ -19,17 +19,6 @@ PS Category- Software
 Team ID- <from portal>
 Team Name- <registered name>
 ```
-
-### Idea title (goes on Slide 2's title placeholder)
-
-Pick one:
-
-- **KAVACH** — *The AI workbench that can prove it never called home*
-- **SETU** — *Sovereign Enterprise Task Unit*
-- Plain descriptive: **Air-Gapped Agentic Workbench with Verifiable Zero-Egress**
-
-KAVACH is the strongest. Widely understood as "shield" in India, already the naming pattern for Indian Railways' safety system, so it reads as infrastructure rather than as a student project. The tagline does the real work: it states the differentiator in nine words.
-
 ---
 
 ## Slide 2 — Proposed Solution
