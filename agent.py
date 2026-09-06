@@ -39,6 +39,15 @@ OUTPUT_DIR = Path("data/outputs")
 
 MAX_SECONDS = 180
 CALL_TIMEOUT = 120
+MIN_TEXT_CHARS = 50  # below this, treat the PDF as having no usable text layer
+
+
+class CorruptPDFError(Exception):
+    """Raised when the PDF cannot be opened at all."""
+
+
+class NoTextLayerError(Exception):
+    """Raised when the PDF opens but yields no extractable text (scanned page)."""
 
 
 # ----------------------------------------------------------------------
@@ -89,10 +98,18 @@ def select_model(request_text, trace):
 # ----------------------------------------------------------------------
 
 def read_pdf(path, trace):
-    doc = pymupdf.open(path)
+    try:
+        doc = pymupdf.open(path)
+    except Exception as exc:
+        raise CorruptPDFError(str(exc)) from exc
+
     text = "\n".join(page.get_text() for page in doc)
     pages = doc.page_count
     doc.close()
+
+    if len(text.strip()) < MIN_TEXT_CHARS:
+        raise NoTextLayerError("no extractable text layer")
+
     trace.emit("document_read", file=Path(path).name, pages=pages, chars=len(text))
     return text
 
@@ -129,8 +146,9 @@ def gather_evidence(facts, retriever, trace):
     if result.refused:
         return []
 
+    citations = sorted({e.cite() for e in result.evidence})
     trace.emit("evidence_gathered", count=len(result.evidence),
-               sources=", ".join(sorted({e.cite() for e in result.evidence}))[:150])
+               sources=", ".join(citations)[:150], citations=citations)
     return result.evidence
 
 
@@ -320,8 +338,31 @@ def validate_docx(path, trace):
 # ----------------------------------------------------------------------
 
 def run(pdf_path, request="Check this inspection report against our procedures "
-                          "and prepare an approval note."):
-    trace = Trace()
+                          "and prepare an approval note.",
+        on_event=None, retriever=None):
+    """
+    Runs the full flow and returns a plain dict describing the outcome, so
+    callers (the CLI, the UI) can render it however they need to:
+
+        {
+            "trace_id": str,
+            "refused": bool,          # True if no acceptance criteria applied
+            "reason": str | None,     # why, when refused or aborted
+            "status": str | None,     # "deviations_found" / "alerts_only" / "no_deviations"
+            "counts": dict | None,    # {"action": n, "alert": n, "acceptable": n}
+            "findings": list[dict],
+            "unmatched": list[str],
+            "assessment": Assessment | None,
+            "out": Path | None,       # the generated .docx, if any
+            "valid": bool | None,
+            "elapsed": float,
+        }
+
+    `on_event` is forwarded to Trace() so a caller can stream events live.
+    `retriever` lets a caller pass in an already-loaded Retriever (the
+    embedding model is slow to load) instead of paying that cost every run.
+    """
+    trace = Trace(on_event=on_event)
     started = time.time()
 
     print(f"\nTrace {trace.id}")
@@ -338,18 +379,31 @@ def run(pdf_path, request="Check this inspection report against our procedures "
                unmatched=len(unmatched))
 
     if not findings:
-        trace.emit("refused", reason="no applicable acceptance criteria in the "
-                                     "knowledge base for this equipment type")
+        reason = ("no applicable acceptance criteria in the knowledge base "
+                  "for this equipment type")
+        trace.emit("refused", reason=reason)
         print("\nREFUSED - no applicable acceptance criteria for this equipment.")
         print(f"Elapsed {round(time.time() - started, 1)}s")
-        return None
+        return {
+            "trace_id": trace.id, "refused": True, "reason": reason,
+            "status": None, "counts": None, "findings": [], "unmatched": unmatched,
+            "assessment": None, "out": None, "valid": None,
+            "elapsed": round(time.time() - started, 1),
+        }
 
-    retriever = Retriever()
+    if retriever is None:
+        retriever = Retriever()
     evidence = gather_evidence(facts, retriever, trace)
 
     if time.time() - started > MAX_SECONDS:
-        trace.emit("aborted", reason="time budget exceeded")
-        return None
+        reason = "time budget exceeded"
+        trace.emit("aborted", reason=reason)
+        return {
+            "trace_id": trace.id, "refused": False, "reason": reason,
+            "status": status, "counts": counts, "findings": findings,
+            "unmatched": unmatched, "assessment": None, "out": None, "valid": None,
+            "elapsed": round(time.time() - started, 1),
+        }
 
     assessment = assess(facts, findings, counts, evidence, model, trace)
 
@@ -370,7 +424,13 @@ def run(pdf_path, request="Check this inspection report against our procedures "
     print(f"Pattern:  {assessment.pattern_identified[:100]}")
     print(f"Artifact: {out}  (valid={valid})")
     print(f"Elapsed:  {total}s")
-    return out
+
+    return {
+        "trace_id": trace.id, "refused": False, "reason": None,
+        "status": status, "counts": counts, "findings": findings,
+        "unmatched": unmatched, "assessment": assessment, "out": out,
+        "valid": valid, "elapsed": total,
+    }
 
 
 if __name__ == "__main__":

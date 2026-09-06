@@ -1,0 +1,56 @@
+# Sovereign Workbench — widget theme.
+# Implements MD Files/SIH26117_Streamlit_UI_Visual_Spec.md.
+#
+# This file themes Streamlit's own widgets, which CSS cannot do cleanly.
+# Everything else is the THEME_CSS constant in app.py.
+# Delete this file and the app still runs, unstyled.
+
+[theme]
+base                     = "dark"
+backgroundColor          = "#0B0C0E"
+secondaryBackgroundColor = "#15171B"
+textColor                = "#D8DEE6"
+borderColor              = "#262A31"
+linkColor                = "#8A929E"
+
+# Monochrome accent: RUN becomes a light key with dark text, not a coloured CTA.
+# Keeps colour meaning-only (severity and network status).
+primaryColor             = "#D8DEE6"
+
+baseRadius               = "none"
+baseFontSize             = 13
+
+# No web fonts. A fonts.googleapis.com request would be a real external call and
+# would contradict the "External calls: 0" counter in our own header. Cascadia
+# ships with Windows 11 / Windows Terminal; Consolas is the guaranteed floor.
+font        = '"Cascadia Mono", "Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace'
+headingFont = '"Cascadia Mono", "Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace'
+codeFont    = '"Cascadia Mono", "Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace'
+
+# --- Paper variant -----------------------------------------------------------
+# If the room is bright or the projector is weak, swap the six values below AND
+# flip PAPER = True in app.py. Both, or the theme will be half-applied.
+#   base                     = "light"
+#   backgroundColor          = "#FAFAF8"
+#   secondaryBackgroundColor = "#F2F2EE"
+#   textColor                = "#1B1D21"
+#   borderColor              = "#E0E0DA"
+#   primaryColor             = "#1B1D21"
+# -----------------------------------------------------------------------------
+
+[client]
+# Kills the Deploy button and trims the hamburger menu.
+toolbarMode = "minimal"
+
+[browser]
+# Streamlit's telemetry defaults to ON. Left on, this app would make a real
+# outbound request while claiming "External calls: 0" on screen. Non-negotiable.
+gatherUsageStats = false
+
+[server]
+# No auto-opened browser window mid-demo, and no email prompt on first launch.
+# Open http://localhost:8501 yourself, before the judges are watching.
+headless = true
+
+# Only needed if you later bundle a font file into static/ (see the visual spec).
+# enableStaticServing = true
