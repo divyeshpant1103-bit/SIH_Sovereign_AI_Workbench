@@ -1,0 +1,18 @@
+SOP-PMP-114 Rev. 4 - Centrifugal Pump Condition Monitoring and Acceptance Criteria
+Section 2 - Acceptance Criteria
+
+Casing wall thickness (minimum measured): acceptable 5.0 mm or greater; alert 4.5 to 5.0 mm; ACTION LIMIT below 4.5 mm.
+
+Bearing housing vibration, drive end (RMS): acceptable 4.5 mm/s or less; alert 4.5 to 7.1 mm/s; ACTION LIMIT above 7.1 mm/s.
+
+Bearing housing vibration, non-drive end (RMS): acceptable 4.5 mm/s or less; alert 4.5 to 7.1 mm/s; ACTION LIMIT above 7.1 mm/s.
+
+Bearing housing temperature: acceptable 80 degrees C or less; alert 80 to 95 degrees C; ACTION LIMIT above 95 degrees C.
+
+Mechanical seal leakage: acceptable no visible leakage; alert intermittent weeping; ACTION LIMIT continuous drip or spray.
+
+Discharge pressure stability over 10 minutes: acceptable plus or minus 0.3 bar; alert 0.3 to 0.8 bar; ACTION LIMIT above plus or minus 0.8 bar.
+
+Motor current stability over 10 minutes: acceptable plus or minus 3 percent; alert 3 to 7 percent; ACTION LIMIT above plus or minus 7 percent.
+
+Suction strainer differential pressure: acceptable 0.35 bar or less; alert 0.35 to 0.50 bar; ACTION LIMIT above 0.50 bar.
