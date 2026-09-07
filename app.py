@@ -105,15 +105,16 @@ THEME_CSS = """
 [data-testid="stFileUploaderDropzone"] { padding:12px; }
 [data-testid="stTextArea"] textarea { font-size:13px; }
 
-/* --- buttons --- */
+/* --- buttons. Width comes from the API (width="stretch"), not from here:
+       the wrapper is content-sized, so width:100% on the button does nothing. --- */
 .stButton > button, .stDownloadButton > button {
-  width:100%; border-radius:0; font-size:12px; font-weight:700;
+  border-radius:0; font-size:12px; font-weight:700;
   letter-spacing:.1em; text-transform:uppercase;
 }
 .stButton > button[kind="primary"] { color:var(--bg); }
 
-/* --- vertical hairline between the task column and the trace --- */
-[data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:last-child {
+/* --- vertical hairline between every pane --- */
+[data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:not(:first-child) {
   border-left:1px solid var(--line); padding-left:32px;
 }
 
@@ -125,8 +126,9 @@ THEME_CSS = """
   padding-bottom:6px; margin:0 0 16px 0;
   display:flex; justify-content:space-between; align-items:baseline; gap:16px;
 }
-.pane .count { font-weight:400; color:var(--faint); letter-spacing:.06em; white-space:nowrap; }
-hr.rule { border:none; border-top:1px solid var(--line); margin:24px 0 16px 0; }
+/* text-transform:none, or the elapsed reads "10.89S" */
+.pane .count { font-weight:400; color:var(--faint); letter-spacing:.06em;
+               white-space:nowrap; text-transform:none; }
 
 /* --- status bar --- */
 .statusbar {
@@ -404,9 +406,12 @@ st.markdown(status_bar_html(network_status(), n_chunks, n_docs),
 # layout
 # ----------------------------------------------------------------------
 
-left, right = st.columns([1, 2])
+# Three panes, three columns. Stacking Result under Task pushed it below the
+# fold while the trace column sat half empty; side by side, the whole run is on
+# one screen. The trace still gets the most width — it is the product.
+task_col, trace_col, result_col = st.columns([1, 2, 1.5])
 
-with left:
+with task_col:
     st.markdown(pane_html("1. Task"), unsafe_allow_html=True)
 
     uploaded = st.file_uploader("Report", type=["pdf"])
@@ -425,18 +430,19 @@ with left:
 
     request_text = st.text_area("Request", value=DEFAULT_REQUEST, height=100)
 
-    run_clicked = st.button("Run", disabled=pdf_path is None, type="primary")
+    run_clicked = st.button("Run", disabled=pdf_path is None,
+                            type="primary", width="stretch")
     state_box = st.empty()
 
-    st.markdown("<hr class='rule'>", unsafe_allow_html=True)
-    st.markdown(pane_html("3. Result"), unsafe_allow_html=True)
-    result_box = st.container()
-
-with right:
+with trace_col:
     trace_head = st.empty()
     trace_box = st.empty()
     st.markdown(EVIDENCE_HEAD, unsafe_allow_html=True)
     evidence_box = st.empty()
+
+with result_col:
+    st.markdown(pane_html("3. Result"), unsafe_allow_html=True)
+    result_box = st.container()
 
 
 def render_trace(running=False):
@@ -550,6 +556,7 @@ def render_result(result, error):
             file_name=Path(out).name,
             mime=("application/vnd.openxmlformats-officedocument"
                   ".wordprocessingml.document"),
+            width="stretch",
         )
 
     st.markdown(trace_id, unsafe_allow_html=True)
